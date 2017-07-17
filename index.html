@@ -1,0 +1,504 @@
+<html>
+    <head>
+        <title>Orbit pixels parameters calculator</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        
+        <!-- Include JQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        
+        <!-- Include D3.js library -->
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+ 
+        <!-- Include Bootstrap from MaxCDN -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        
+        <!-- Include  custom css file -->
+        <link href="css/custom.css" rel="stylesheet" type="text/css">
+    </head>
+    
+    <body>
+        <div class="container-fluid">
+            <div class="jumbotron">
+                <h2>Orbit Pixel Parameters Calculator</h2>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 col-md-4">
+                    <h3 style="margin-left: 15px;">Input</h3>
+                    <form class="input-form">
+                        <div class="panel panel-default input-panel">
+                            <div class="form-group row">
+                                <label for="height" class="col-md-4 col-sm-4 col-xs-4 col-form-label">Height:</label>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <input type="number" step="any" class="form-control" id="height">
+                                </div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    km
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="fov" class="col-md-4 col-sm-4 col-xs-4 col-form-label">Field of view:</label>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <input type="number" step="any" class="form-control" id="fov">
+                                </div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <select class="form-control" id="fovMeasSel">
+                                        <option value="deg">deg</option>
+                                        <option value="rad">rad</option>
+                                        <option value="grad">grad</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="viewAngle" class="col-md-4 col-sm-4 col-xs-4 col-form-label">View angle:</label>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <input type="number" step="any" class="form-control" id="viewAng">
+                                </div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <select class="form-control" id="viewAngMeasSel">
+                                        <option value="deg">deg</option>
+                                        <option value="rad">rad</option>
+                                        <option value="grad">grad</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="radius" class="col-md-4 col-sm-4 col-xs-4 col-form-label">Planet radius:</label>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <input type="number" step="any" class="form-control" id="radius">
+                                </div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    km
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="pixels" class="col-md-4 col-sm-4 col-xs-4 col-form-label">Pixels:</label>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <input type="number" step="1" class="form-control" id="pixels">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-5" style="margin-left: 15px;">
+                                <button type="submit" id="calcBtn" class="btn btn-default">Calculate</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-4 col-md-4 table-container">
+                    <h3>Results</h3>
+                    <div id="table-wrapper">
+                        <div id="table-scroll">
+                            <table id="outputTable" class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Pixel</th>
+                                        <th>View angle</th>
+                                        <th>LoS (km)</th>
+                                        <th>Size (m)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <h3>Preview</h3>
+                    <div id="previewContainer" class="panel panel-default preview-panel">
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+            </div>
+        </div>
+
+<!------------------------------------------------------------------------------
+SCRIPTS
+------------------------------------------------------------------------------->
+        <script>
+//            Set initial values;
+//            $('#height').val(550);
+//            $('#fov').val(18);
+//            $('#viewAng').val(15);
+//            $('#radius').val(6371);
+//            $('#pixels').val(640);
+        </script>
+        <script>
+            // Refresh page content when the window is resized (used to redraw the figure).
+            $(window).resize(function () {
+                $("#calcBtn").trigger("click");
+            });
+            
+            // Event listener (when 'Calculate' button is clicked).
+            $('.input-form').on('submit', function () {
+                // Store all the input parameters
+                var h = parseFloat($('#height').val());
+                var fov  = parseFloat($('#fov').val());
+                var fovMeas = $('#fovMeasSel').val();
+                var fovRad = cnvToRad(fov, fovMeas);
+                var viewAng = parseFloat($('#viewAng').val());
+                var viewAngMeas = $('#viewAngMeasSel').val();
+                var viewAngRad = cnvToRad(viewAng, viewAngMeas);
+                var r = parseFloat($('#radius').val());
+                var px = parseFloat($('#pixels').val());
+
+                // Clear the table and the preview window
+                $('#outputTable > tbody').html("");
+                $('#previewContainer').html("");
+                
+                // Create an OrbitPixParams object
+                var orbitPixParamsObj = new OrbitPixParams(h, fovRad, viewAngRad, r, px);
+                
+                // Execute calculations
+                orbitPixParamsObj.maxFovCalc();
+                orbitPixParamsObj.maxViewAngCalc();
+                orbitPixParamsObj.losCalc();
+                orbitPixParamsObj.pixSizeCalc();
+                
+                if (!orbitPixParamsObj.errFov && !orbitPixParamsObj.errViewAng) { // check if an error occured
+                    // Convert the angle value into the appropriate units of measurement and fill the output table
+                    for (var i = 0; i < px; i++) {
+                        var angPres;
+                        if (viewAngMeas == "deg")
+                            angPres = cnvToDeg(orbitPixParamsObj.angVec[i]);
+                        else if (viewAngMeas == "rad")
+                            angPres = orbitPixParamsObj.angVec[i];
+                        else if (viewAngMeas == "grad")
+                            angPres = cnvToGrad(orbitPixParamsObj.angVec[i]);
+
+                        $('#outputTable').append('<tr><td>'+ (i+1) +'</td><td>'+ angPres.toFixed(3) +'</td><td>'+ (orbitPixParamsObj.losVec[i]).toFixed(3) +'</td><td>'+ (orbitPixParamsObj.pixVec[i]*1000).toFixed(2) +'</td></tr>')
+                    }
+
+                    // Draw a figure in the preview area
+                    drawFig(orbitPixParamsObj);
+                }
+                else // if an error occured print a message
+                {
+                    var prMsg = orbitPixParamsObj.errMsg;
+                    if (orbitPixParamsObj.errFov)
+                    {
+                        if (fovMeas === "rad")
+                            prMsg += " (" + (orbitPixParamsObj.maxFov).toFixed(4) + ")";
+                        else if (fovMeas === "deg")
+                            prMsg += " (" + (cnvToDeg(orbitPixParamsObj.maxFov)).toFixed(3) + ")";
+                        else if (fovMeas === "grad")
+                            prMsg += " (" + (cnvToGrad(orbitPixParamsObj.maxFov)).toFixed(3) + ")";
+                    }
+
+                    else if (orbitPixParamsObj.errViewAng)
+                    {
+                        if (fovMeas === "rad")
+                            prMsg += " (+/- " + (orbitPixParamsObj.maxViewAng).toFixed(4) + ")";
+                        else if (fovMeas === "deg")
+                            prMsg += " (+/- " + (cnvToDeg(orbitPixParamsObj.maxViewAng)).toFixed(3) + ")";
+                        else if (fovMeas === "grad")
+                            prMsg += " (+/- " + (cnvToGrad(orbitPixParamsObj.maxViewAng)).toFixed(3) + ")";
+                    }
+
+                    alert(prMsg);
+                }
+
+                return false;
+            });
+        </script>
+        
+        <script>   
+            // Define OrbitPixParams constructor
+            function OrbitPixParams(h, fov, viewAng, r, px) {
+                this.h = h;
+                this.fov = fov;
+                this.viewAng = viewAng;
+                this.r = r;
+                this.px = px;
+                this.maxFov;
+                this.maxViewAng;
+                this.dViewAng = fov / px;
+                this.dAngSidesVec;
+                this.losVec;
+                this.angVec;
+                this.pixVec;
+                this.errMsg;
+                this.errFov = false;
+                this.errViewAng = false;
+                
+                // Law of sines, case 1: two sides and one non-enclosed angle are known, calculate the oposite angle of side_2.
+                this.sinLawAng =  function(side_1, side_2, angle_1) {
+                    var angle_2;
+                    
+                    angle_2 = Math.asin((side_2) * Math.sin(angle_1) / side_1);
+                    
+                    return angle_2;
+                }
+                
+                // Law of sines, case 2: two angles and a side are known, calculate the oposite side of angle_2.
+                this.sinLawSide =  function(angle_1, angle_2, side_1) {
+                    var side_2;
+                    
+                    side_2 = side_1 * Math.sin(angle_2) / Math.sin(angle_1);
+                    
+                    return side_2;
+                }
+                
+                // Law of cosines: two sides and the enclosed angle are known, calculate the third side.
+                this.cosLaw =  function(side_1, side_2, angle) {
+                    var side_3;
+                    
+                    side_3 = Math.sqrt((Math.pow(side_1, 2) + Math.pow(side_2, 2) - 2 * side_1 * side_2 * Math.cos(angle)));
+                    
+                    return side_3;
+                }
+                
+                // Find the max allowed fov angle (when the fov angle sides gets tangent to the Earth's surface).
+                this.maxFovCalc = function() {
+                    var side_1, side_2, angle_1;
+                    side_1 = r + h;
+                    side_2 = r;
+                    angle_1 = Math.PI / 2;                   
+                    this.maxFov =  2 *  this.sinLawAng(side_1, side_2, angle_1);
+                }
+                
+                // Find the max allowed angle (when the external side of fov angle gets tangent to the Earth's surface)
+                this.maxViewAngCalc = function() {
+                    this.maxViewAng = this.maxFov / 2 - this.fov / 2;
+                }
+                
+                // Check if fov or view angle is out of the allowed range
+                this.checkCond = function () {
+                    ok = true;
+
+                    if (this.fov > this.maxFov)
+                    {
+                        this.errFov = true;
+                        this.errMsg = "Fov angle is greater than the max allowed value";
+                        ok = false;
+                    }
+
+                    else if (Math.abs(this.viewAng) > this.maxViewAng)
+                    {
+                        this.errViewAng = true;
+                        this.errMsg = "View angle is greater than the max allowed value";
+                        ok = false;
+                    }
+
+                    return ok;
+                }
+                // Calculate the length of a straight line, starting from the satellite and ending on the planet's surface (/| when this angle is given).
+                this.strtLineLenCalc = function(ang_1) {
+                    var ang_2, ang_3, lineLen;
+
+                    ang_2 = 2 * Math.PI - this.sinLawAng(this.r, this.r + this.h, ang_1);
+                    ang_3 = 2 * Math.PI - ang_1 - ang_2;
+                    lineLen = this.sinLawSide(ang_1, ang_3, r);
+
+                    return lineLen;
+                    
+                }
+                
+                // Calculate the lenth of all sides of the angles resulting after the segmetation of the fov into px parts.
+                this.dAngSidesCalc = function() {
+                    var dAngSidesVec = new Array(this.px + 1);
+                    var ang_1;
+
+                    for (var i = 0; i <= this.px; i++)
+                    {
+                        ang_1 = this.viewAng + this.fov / 2 - i * this.dViewAng;
+                        if (ang_1)
+                            dAngSidesVec[i] = this.strtLineLenCalc(ang_1);
+                        else // do not use the law of sines when the angle_1 is equal to 0. Directly assign the requested value (h) to the vector.
+                            dAngSidesVec[i] = this.h;
+                    }
+
+                    this.dAngSidesVec = dAngSidesVec;
+                }
+                
+                // Calculate the (centered) line of sight for each pixel.
+                this.losCalc = function() {
+                    var losVec = new Array(this.px);
+                    var angVec = new Array(this.px);
+                    var ang_1;
+
+                    if (this.checkCond())
+                    {
+                        for (var i = 0; i < this.px; i++)
+                        {
+                            ang_1 = this.viewAng + (this.fov / 2) - (i + 1) * this.dViewAng + (this.dViewAng / 2);
+                            losVec[i] = this.strtLineLenCalc(ang_1); // in each step, store the calculated line of sight
+                            angVec[i] = ang_1; // in each step, store the angle used
+                        }
+                        this.losVec = losVec;
+                        this.angVec = angVec;
+                    }
+                }
+                
+                // calculate each pixel's corresponding length on the planet surface.
+                this.pixSizeCalc = function() {
+                    var pixVec = new Array(this.px);
+                    var crd, theta;
+                    if (this.checkCond()) {
+                        this.dAngSidesCalc();
+                        for (var i = 0; i < px; i++) {
+                            crd = this.cosLaw(this.dAngSidesVec[i], this.dAngSidesVec[i+1], this.dViewAng);
+                            theta = 2 * Math.asin(crd / (2 * this.r));
+                            pixVec[i] = this.r * theta;
+                        }
+                        
+                        this.pixVec = pixVec;
+                    }
+                }
+            }  
+        </script>
+        
+        <script>     
+            // Convert any input to rad. Store all angles in rads.
+            function cnvToRad(angle, measure) {
+                var val;
+                    if (measure == "rad")
+                        val = angle;
+                    else if (measure == "deg")
+                        val = (Math.PI / 180) * angle;
+                    else if (measure == "grad")
+                        val = (Math.PI / 200) * angle;
+
+                    return val;
+            }
+            
+            // Convert a stored value (in rads) to degs (for presentation).
+            function cnvToDeg(angle) {
+                var val;
+
+                val = 180 * angle / Math.PI;
+
+                return val;
+            }
+            
+            // Convert a stored value (in rads) to grads (for presentation).
+            function cnvToGrad(angle) {
+                var val;
+
+                val = 200 * angle / Math.PI;
+
+                return val;
+            }
+            
+            // Draw a figure in the preview area.
+            function drawFig(orbitPixParamsObj) {
+                var winH = $('#previewContainer').height();
+                var winW = $('#previewContainer').width();
+                
+                // Get the length of the fov angle sides
+                var side1 = orbitPixParamsObj.dAngSidesVec[0];
+                var side2 = orbitPixParamsObj.dAngSidesVec[orbitPixParamsObj.px];
+                
+                // Calculate the coordinates of the end of the fov angle sides
+                var side1X = side1 * Math.sin(orbitPixParamsObj.viewAng + orbitPixParamsObj.fov / 2);
+                var side1Y = side1 * Math.cos(orbitPixParamsObj.viewAng + orbitPixParamsObj.fov / 2);
+                var side2X = side2 * Math.sin(orbitPixParamsObj.viewAng - orbitPixParamsObj.fov / 2);
+                var side2Y = side2 * Math.cos(orbitPixParamsObj.viewAng - orbitPixParamsObj.fov / 2);
+                
+                // Calculate the horizontal distance between the end of the fov angle sides
+                var dx;
+                if (orbitPixParamsObj.viewAng >=0)
+                    dx = side1X - side2X > side1X ? side1X - side2X : side1X;
+                else
+                    dx = side1X - side2X > Math.abs(side2X) ? side1X - side2X : Math.abs(side2X);
+                
+                // Calculate the vertical distance between the end of the fov angle sides.
+                var dy = Math.abs(side1Y - side2Y);
+                
+                // Calculate the multiplication factor.
+                var factor = (winH - 100) / (orbitPixParamsObj.h + dy);
+                if ((winW - 100) / dx < factor)
+                    factor = (winW - 100) / dx;
+                
+                // Calculate the left/right margin.
+                var margin;
+                if ((winW - dx * factor) > 100)
+                    margin = (winW - dx * factor) / 2;
+                else
+                    margin = 50;
+                
+                // Draw the figure elements.
+                var svgContainer = d3.select(".preview-panel").append("svg")
+                                    .attr("width", winW)
+                                    .attr("height", winH);
+                            
+                var planetFillColor = d3.rgb(153, 102, 51);
+                var line_1, line_2, circle, x, angDeg;
+                var rotAng = cnvToDeg(orbitPixParamsObj.viewAng);
+                if (orbitPixParamsObj.viewAng >=0)
+                {
+                    line_1 = svgContainer.append("line")
+                                             .attr("x1", margin + factor * side1X)
+                                             .attr("y1", 50)
+                                             .attr("x2", margin)
+                                             .attr("y2", 50 + factor * side1Y)
+                                             .style("stroke-dasharray", ("5,3"))
+                                             .attr("stroke", "grey");
+
+                    line_2 = svgContainer.append("line")
+                                             .attr("x1", margin + factor * side1X)
+                                             .attr("y1", 50)
+                                             .attr("x2", margin + factor * (side1X - side2X))
+                                             .attr("y2", 50 + factor * side2Y)
+                                             .style("stroke-dasharray", ("5,3"))
+                                             .attr("stroke", "grey");
+
+                                               //Draw the Ellipse
+                    circle = svgContainer.append("circle")
+                                            .attr("cx", margin + factor * side1X)
+                                            .attr("cy", 50 + (orbitPixParamsObj.h + orbitPixParamsObj.r) * factor)
+                                            .attr("r", orbitPixParamsObj.r * factor)
+                                            .style("stroke", "black")
+                                            .style("fill", planetFillColor);
+                    
+                    x = margin + factor * side1X;
+                    svgContainer.append("svg:image")
+                                .attr("xlink:href", "img/sat.png")
+                                .attr("width", 50)
+                                .attr("height", 50)
+                                .attr("x", -25)
+                                .attr("y",-25)
+                                .attr("transform", "translate("+ x +", 50), rotate("+rotAng+")");
+                }
+                else {
+                    line_1 = svgContainer.append("line")
+                                             .attr("x1", margin)
+                                             .attr("y1", 50)
+                                             .attr("x2", margin + factor * Math.abs(side1X))
+                                             .attr("y2", 50 + factor * side1Y)
+                                             .style("stroke-dasharray", ("5,3"))
+                                             .attr("stroke", "grey");
+
+                    line_2 = svgContainer.append("line")
+                                             .attr("x1", margin)
+                                             .attr("y1", 50)
+                                             .attr("x2", margin + factor * (Math.abs(side2X)))
+                                             .attr("y2", 50 + factor * side2Y)
+                                             .style("stroke-dasharray", ("5,3"))
+                                             .attr("stroke", "grey");
+
+                                               //Draw the Ellipse
+                    circle = svgContainer.append("circle")
+                                            .attr("cx", margin)
+                                            .attr("cy", 50 + (orbitPixParamsObj.h + orbitPixParamsObj.r) * factor)
+                                            .attr("r", orbitPixParamsObj.r * factor)
+                                            .style("stroke", "black")
+                                            .style("fill", planetFillColor);
+                    
+                    x = margin;
+                    svgContainer.append("svg:image")
+                                .attr("xlink:href", "img/sat.png")
+                                .attr("width", 50)
+                                .attr("height", 50)
+                                .attr("x", -25)
+                                .attr("y",-25)
+                                .attr("transform", "translate("+ x +", 50), rotate("+rotAng+")");
+                }    
+            }      
+        </script>
+    </body>
+</html>

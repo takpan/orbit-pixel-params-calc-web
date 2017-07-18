@@ -117,7 +117,6 @@
         </div>
 
 <!-- SCRIPTS -->
-
         <script>
 //            Set initial values;
 //            $('#height').val(550);
@@ -127,9 +126,12 @@
 //            $('#pixels').val(640);
         </script>
         <script>
-            // Refresh page content when the window is resized (used to redraw the figure).
+            var orbitPixParamsObj; // object declaration in global scope
+
+            // Redraw preview figure when the window is resized.
             $(window).resize(function () {
-                $("#calcBtn").trigger("click");
+                $('#previewContainer').html(""); // clear the preview window
+                drawFig(orbitPixParamsObj); // redraw the figure
             });
             
             // Event listener (when 'Calculate' button is clicked).
@@ -150,13 +152,16 @@
                 $('#previewContainer').html("");
                 
                 // Create an OrbitPixParams object
-                var orbitPixParamsObj = new OrbitPixParams(h, fovRad, viewAngRad, r, px);
+                orbitPixParamsObj = new OrbitPixParams(h, fovRad, viewAngRad, r, px);
                 
                 // Execute calculations
                 orbitPixParamsObj.maxFovCalc();
                 orbitPixParamsObj.maxViewAngCalc();
                 orbitPixParamsObj.losCalc();
                 orbitPixParamsObj.pixSizeCalc();
+                
+                orbitPixParamsJSON = JSON.stringify(orbitPixParamsObj);
+                
                 
                 if (!orbitPixParamsObj.errFov && !orbitPixParamsObj.errViewAng) { // check if an error occured
                     // Convert the angle value into the appropriate units of measurement and fill the output table
@@ -348,7 +353,7 @@
                         this.pixVec = pixVec;
                     }
                 }
-            }  
+            } 
         </script>
         
         <script>     
@@ -497,7 +502,7 @@
                                 .attr("y",-25)
                                 .attr("transform", "translate("+ x +", 50), rotate("+rotAng+")");
                 }    
-            }      
+            }
         </script>
     </body>
 </html>

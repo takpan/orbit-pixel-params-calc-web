@@ -15,7 +15,7 @@
     padding-right: 0px;
 }
 .input-panel {
-    height: 416px;
+    min-height: 416px;
     margin-left: 15px;
     padding-top: 30px;
     padding-bottom: 0px;
@@ -38,7 +38,7 @@
     padding: 0px;
 }
 #table-scroll {
-  height:416px;
+  height: 416px;
   overflow:auto;  
 }
 #table-wrapper table {
@@ -61,7 +61,7 @@ tbody{
 }
 
 .preview-panel {
-    height: 416px;
+    min-height: 416px;
     margin-right: 15px;
 }
 
